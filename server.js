@@ -7,6 +7,8 @@ const { get } = require('lodash');
 const moment = require('moment');
 const path = require('path');
 
+const PORT = 8080;
+
 const app = express();
 app.use(cors());
 app.use(fileUpload({
@@ -25,9 +27,10 @@ app.get('/', (req, res) => {
 app.post('/photos', (req, res) => {
   const url = (() => {
     const photo = get(req, ['files', 'photo'], null);
-    const tempPath = get(req, ['files', 'photo', 'tempFilePath'], null);
-    const filename = get(req, ['files', 'photo', 'name'], null);
+    // const filename = get(req, ['files', 'photo', 'name'], null);
     if (photo) {
+      const extension = photo.name.match(/[^.]*$/);
+      const filename = `${req.body.cookie}.${moment().format('YYYY-MM-DD-HH-mm-ss-SSS')}.${extension}`;
       photo.mv(`./photos/${filename}`);
       return `${req.protocol}://${req.get('host')}/photos/${filename}`;
     }
@@ -52,7 +55,6 @@ const server = app;
 //   passphrase: 'component',
 // }, app);
 
-const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   const strNow = moment().format('YYYY-MM-DD HH:mm:ss.SSS');
   console.log(`(${strNow})`, 'Started on port', PORT);
