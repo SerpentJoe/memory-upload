@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Fab,
-  Zoom,
+  Grow,
 } from '@material-ui/core';
 import {
   AddAPhoto,
@@ -12,7 +12,9 @@ import { useList } from 'react-use';
 import './App.css';
 import useFingerprint from './fingerprint';
 
-const SERVER_PORT = 8080;
+import {
+  SERVER_PORT,
+} from './env';
 
 const useStyles = makeStyles(() => ({
   grid: {
@@ -105,7 +107,7 @@ function App() {
       </form>
       {(recentUploads) && <>
         {recentUploads.map((url, index) => <>
-          <Zoom in>
+          <Grow in>
             <figure
               key={url}
               className={classes.figure}
@@ -113,7 +115,7 @@ function App() {
                 backgroundImage: (url && `url(${url})`),
               }}
             />
-          </Zoom>
+          </Grow>
         </>)}
       </>}
     </main>

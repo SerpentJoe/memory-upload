@@ -2,7 +2,6 @@
   "name": "memory-upload",
   "version": "0.1.0",
   "private": true,
-  "main": "server.js",
   "dependencies": {
     "@material-ui/core": "^4.8.3",
     "@material-ui/icons": "^4.5.1",
@@ -23,7 +22,7 @@
     "react-use": "^13.16.1"
   },
   "scripts": {
-    "server": "PORT=8080 nodemon .",
+    "server": "nodemon server",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
