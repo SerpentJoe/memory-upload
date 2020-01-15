@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Fab,
+  Zoom,
 } from '@material-ui/core';
 import {
   AddAPhoto,
@@ -104,13 +105,15 @@ function App() {
       </form>
       {(recentUploads) && <>
         {recentUploads.map((url, index) => <>
-          <figure
-            key={url}
-            className={classes.figure}
-            style={{
-              backgroundImage: (url && `url(${url})`),
-            }}
-          />
+          <Zoom in>
+            <figure
+              key={url}
+              className={classes.figure}
+              style={{
+                backgroundImage: (url && `url(${url})`),
+              }}
+            />
+          </Zoom>
         </>)}
       </>}
     </main>
