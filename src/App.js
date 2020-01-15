@@ -6,53 +6,31 @@ import {
 import {
   AddAPhoto,
 } from '@material-ui/icons';
-import md5 from 'md5';
+import { useList } from 'react-use';
 // import logo from './logo.svg';
-// import './App.css';
+import './App.css';
+import useFingerprint from './fingerprint';
 
 const SERVER_PORT = 8080;
 
-const FINGERPRINT_COOKIE_NAME = 'memoryFingerprint';
-const useUniqueCookie = () => {
-  const [cookie, setCookie] = useState(null);
-
-  useEffect(() => {
-    if (cookie) return;
-
-    const cookies = Object.fromEntries(
-      window.document.cookie
-        .replace(/;\s*/g, '\n')
-        .matchAll(/^[^=]*(?=(?:=(.*))?)/gm)
-    );
-
-    if (cookies[FINGERPRINT_COOKIE_NAME]) {
-      setCookie(cookies[FINGERPRINT_COOKIE_NAME]);
-    } else {
-      const cookieValue = md5([Date.now(), 0^(Math.random() * (1<<16))].join('.')).slice(-12);
-      document.cookie = `${FINGERPRINT_COOKIE_NAME}=${encodeURIComponent(cookieValue)};max-age=${86400 * 365}`;
-      setCookie(cookieValue);
-    }
-  }, [cookie]);
-
-  return cookie;
-};
-
 const useStyles = makeStyles(() => ({
-  main: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundSize: 'contain',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: `repeat(3, 1fr)`,
+    gridAutoRows: '33vh',
+    gridRowGap: '1vh',
+    gridColumnGap: '1vw',
+  },
+  form: {
+    gridColumnStart: 2,
+    gridColumnEnd: 2,
+    gridRowStart: 2,
+    gridRowEnd: 2,
+    justifySelf: 'center',
+    alignSelf: 'center',
   },
   uploadButton: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
+    position: 'relative',
   },
   uploadButtonLabel: {
     position: 'absolute',
@@ -68,17 +46,24 @@ const useStyles = makeStyles(() => ({
     left: '200%',
     opacity: 0,
   },
+  figure: {
+    margin: 0,
+    backgroundSize: 'contain',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    filter: 'drop-shadow(0 0 .5vh rgba(0, 0, 0, .6))',
+  },
 }));
 
 function App() {
   const classes = useStyles();
   const formEl = useRef(null);
-  const [file, setFile] = useState(null);
-  const [recentUpload, setRecentUpload] = useState(null);
-  const cookie = useUniqueCookie();
+  const [files, setFiles] = useState(null);
+  const [recentUploads, { push: pushRecentUploads }] = useList([]);
+  const cookie = useFingerprint('memoryFingerprint');
 
   useEffect(() => {
-    if (!file) return;
+    if (!files) return;
 
     const url = String(Object.assign(new URL(window.location.href), {
       port: SERVER_PORT,
@@ -89,8 +74,8 @@ function App() {
     xhr.open('POST', url, true);
     xhr.onload = () => {
       try {
-        const { url } = JSON.parse(xhr.responseText);
-        setRecentUpload(url);
+        const { urls } = JSON.parse(xhr.responseText);
+        pushRecentUploads(...urls);
       } catch (err) {}
     };
     const data = new FormData(formEl.current);
@@ -98,28 +83,37 @@ function App() {
     xhr.send(data);
 
     return () => xhr.abort();
-  }, [file]);
+  }, [files]);
 
   return <>
-    <form encType="multipart/form-data" method="post" className={classes.main} ref={formEl}>
-      <Fab color="primary" className={classes.uploadButton}>
-        <label className={classes.uploadButtonLabel}>
-          <input
-            name="photo"
-            type="file"
-            accept="image/*"
-            capture="camera"
-            className={classes.uploadInput}
-            onChange={evt => setFile(evt.target.files[0])}
+    <main className={classes.grid}>
+      <form encType="multipart/form-data" method="post" className={classes.form} ref={formEl}>
+        <Fab color="primary" className={classes.uploadButton}>
+          <label className={classes.uploadButtonLabel}>
+            <input
+              name="photo"
+              type="file"
+              accept="image/*"
+              multiple
+              className={classes.uploadInput}
+              onChange={evt => setFiles([...evt.target.files])}
+            />
+          </label>
+          <AddAPhoto />
+        </Fab>
+      </form>
+      {(recentUploads) && <>
+        {recentUploads.map((url, index) => <>
+          <figure
+            key={url}
+            className={classes.figure}
+            style={{
+              backgroundImage: (url && `url(${url})`),
+            }}
           />
-        </label>
-        <AddAPhoto />
-      </Fab>
-    </form>
-
-    {(recentUpload) && <>
-      <main className={classes.main} style={{ backgroundImage: `url(${recentUpload})` }}></main>
-    </>}
+        </>)}
+      </>}
+    </main>
   </>;
 }
 

@@ -19,7 +19,8 @@
     "nodemon": "^2.0.2",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "react-scripts": "3.3.0"
+    "react-scripts": "3.3.0",
+    "react-use": "^13.16.1"
   },
   "scripts": {
     "server": "PORT=8080 nodemon .",

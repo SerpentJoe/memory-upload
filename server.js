@@ -20,31 +20,55 @@ app.use(fileUpload({
   app.use(`/${dirname}`, express.static(`./${dirname}`));
 }
 
-app.get('/', (req, res) => {
-  res.send('yar');
-});
-
 app.post('/photos', (req, res) => {
-  const url = (() => {
+  const urls = (() => {
     const photo = get(req, ['files', 'photo'], null);
-    // const filename = get(req, ['files', 'photo', 'name'], null);
     if (photo) {
-      const extension = photo.name.match(/[^.]*$/);
-      const filename = `${req.body.cookie}.${moment().format('YYYY-MM-DD-HH-mm-ss-SSS')}.${extension}`;
-      photo.mv(`./photos/${filename}`);
-      return `${req.protocol}://${req.get('host')}/photos/${filename}`;
+      const urlPrefix = `${req.protocol}://${req.get('host')}/photos`;
+      const photos = (Array.isArray(photo))
+        ? photo
+        : [photo];
+      const dirname = './photos';
+      return photos.map((photo, index) => {
+        const extension = photo.name.match(/[^.]*$/);
+        const filename = [
+          req.body.cookie,
+          moment().format('YYYY-MM-DD-HH-mm-ss-SSS'),
+          String(index).padStart(4, 0),
+          extension,
+        ].join('.');
+
+        const relpath = `${dirname}/${filename}`;
+        try {
+          photo.mv(relpath);
+        } catch (err) {
+          fs.mkdirSync(dirname);
+          photo.mv(relpath);
+        }
+
+        return `${urlPrefix}/${filename}`;
+      });
     }
     // else ...
     return null;
   })();
 
-  res.send(JSON.stringify({ url }));
+  res.send(JSON.stringify({ urls }));
 });
 app.get('/photos', (req, res) => {
-  const contents = fs.readdirSync('./photos');
+  const contents = (() => {
+    const relpath = './photos';
+    try {
+      return fs.readdirSync(relpath);
+    } catch (err) {
+      fs.mkdirSync(relpath);
+      return [];
+    }
+  })();
+  const urlPrefix = `${req.protocol}://${req.get('host')}/photos`;
   const urls = contents
     .filter(str => !/DS_Store/i.test(str))
-    .map(filename => `${req.protocol}://${req.get('host')}/photos/${filename}`)
+    .map(filename => `${urlPrefix}/${filename}`)
   res.send(JSON.stringify(urls));
 });
 
