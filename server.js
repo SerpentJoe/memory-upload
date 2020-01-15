@@ -16,36 +16,40 @@ app.use(fileUpload({
   tempFileDir: '/tmp/',
 }));
 
-{ const dirname = 'photos';
-  app.use(`/${dirname}`, express.static(`./${dirname}`));
+{ // Ensure photos directory exists, and share it
+  const dirname = 'photos';
+  const relpath = `./${dirname}`;
+  try {
+    fs.readdirSync(relpath);
+  } catch (err) {
+    fs.mkdirSync(relpath);
+  } finally {
+    app.use(`/${dirname}`, express.static(relpath));
+  }
 }
 
 app.post('/photos', (req, res) => {
   const urls = (() => {
     const photo = get(req, ['files', 'photo'], null);
     if (photo) {
+      const strTime = moment().format('YYYY-MM-DD-HH-mm-ss-SSS');
+      const fingerprint = req.body.cookie;
       const urlPrefix = `${req.protocol}://${req.get('host')}/photos`;
       const photos = (Array.isArray(photo))
         ? photo
         : [photo];
-      const dirname = './photos';
+      const relpath = './photos';
       return photos.map((photo, index) => {
         const extension = photo.name.match(/[^.]*$/);
         const filename = [
-          req.body.cookie,
-          moment().format('YYYY-MM-DD-HH-mm-ss-SSS'),
+          strTime,
           String(index).padStart(4, 0),
+          fingerprint,
           extension,
         ].join('.');
-
-        const relpath = `${dirname}/${filename}`;
-        try {
-          photo.mv(relpath);
-        } catch (err) {
-          fs.mkdirSync(dirname);
-          photo.mv(relpath);
-        }
-
+        // Move the file out of temp storage
+        photo.mv(`${relpath}/${filename}`);
+        // Construct the URL
         return `${urlPrefix}/${filename}`;
       });
     }
@@ -56,15 +60,7 @@ app.post('/photos', (req, res) => {
   res.send(JSON.stringify({ urls }));
 });
 app.get('/photos', (req, res) => {
-  const contents = (() => {
-    const relpath = './photos';
-    try {
-      return fs.readdirSync(relpath);
-    } catch (err) {
-      fs.mkdirSync(relpath);
-      return [];
-    }
-  })();
+  const contents = fs.readdirSync('./photos');
   const urlPrefix = `${req.protocol}://${req.get('host')}/photos`;
   const urls = contents
     .filter(str => !/DS_Store/i.test(str))
