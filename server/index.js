@@ -20,7 +20,7 @@ app.use(fileUpload({
 
 { // Ensure photos directory exists, and share it
   const dirname = 'photos';
-  const relpath = `../${dirname}`;
+  const relpath = `./${dirname}`;
   try {
     fs.readdirSync(relpath);
   } catch (err) {
@@ -40,7 +40,7 @@ app.post('/photos', (req, res) => {
       const photos = (Array.isArray(photo))
         ? photo
         : [photo];
-      const relpath = '../photos';
+      const relpath = './photos';
       return photos.map((photo, index) => {
         const extension = photo.name.match(/[^.]*$/);
         const filename = [
@@ -62,7 +62,7 @@ app.post('/photos', (req, res) => {
   res.send(JSON.stringify({ urls }));
 });
 app.get('/photos', (req, res) => {
-  const contents = fs.readdirSync('../photos');
+  const contents = fs.readdirSync('./photos');
   const urlPrefix = `${req.protocol}://${req.get('host')}/photos`;
   const urls = contents
     .filter(str => !/DS_Store/i.test(str))
